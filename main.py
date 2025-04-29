@@ -30,7 +30,8 @@ def LoadImages():
 
 
 """
-Main function to run the chess game. Initializes the game, sets up the graphics, and handles user input.
+Main function to run the chess game. Initializes the game, sets up the graphics, and handles user input. Call all the helper functions into the main function.
+The main loop handles events, updates the game state, and draws the game on the screen.
 """
 def main():
     p.init()    # Initialize the pygame library
@@ -40,12 +41,27 @@ def main():
     state = engine.GameState()  # Create a new GameState object to manage the game state
     LoadImages() # Load the images of the chess pieces
     running = True  # Flag to control the main loop
+    #Intialize the variables to keep track of the last click of the player and the coordinates of the player's clicks - outside of the while loop as we can reuse them.
+    square_selected = ()  # Tuple to keep track of the last click of the player (row,column)
+    player_clicks = []  # List to store the coordinates of the player's clicks [(row1, column1), (row2, column2)]
     while running:
         for e in p.event.get():
             if e.type == p.QUIT:  # Check if the user has closed the window
                 running = False
                 print("Game Over")
-        
+            elif e.type == p.MOUSEBUTTONDOWN:
+                location = p.mouse.get_pos() #x,y coordinates of the mouse click
+                col = location[0] // SQUARE_SIZE  # Calculate the column based on the mouse click position [0] is the x coordinate
+                row = location[1] // SQUARE_SIZE  # Calculate the row based on the mouse click position [1] is the y coordinate
+                if square_selected == (row, col): # If the user clicks on the same square again, deselect it
+                    square_selected = ()
+                    player_clicks = []  # Reset the player clicks   
+                else:
+                    square_selected = (row, col)  # Update the square selected by the player
+                    player_clicks.append(square_selected)  # Add the selected square to the player clicks
+                if len(player_clicks) == 2:  # If the player has made two clicks
+                    pass
+        DrawGame(screen, state) # call the DrawGame function to draw the current game state on the screen
         clock.tick(MAX_FPS)  # Control the frame rate of the game
         p.display.flip() # Update the display
 
@@ -60,11 +76,24 @@ def DrawGame(screen, state):
 """
 Draw the chessboard on the screen. The board is drawn in a checkerboard pattern with alternating colors."""
 def DrawBoard(screen):
-    pass
+    colors = [p.Color("white"), p.Color("gray")] #list for colors on the checkerboard 
+    #Creating a nested for loop visualizing the board:start with a white square 
+    for r in range(DIMENSION): 
+        for c in range(DIMENSION):
+            color = colors[((r+c) % 2)] # Calculate the color of the square based on its position
+            p.draw.rect(screen, color, p.Rect(c*SQUARE_SIZE, r*SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)) # Draw the square on the screen
+
+
+
 
 # Draw the chessboard on the screen. The board is drawn in a checkerboard pattern with alternating colors.
 def DrawPieces(screen, board):
-    pass 
+    for r in range(DIMENSION):  # Loop through each row of the board
+        for c in range(DIMENSION): # Loop through each column of the board
+            piece = board[r][c] # Get the piece at the current position (row, column)
+            #if the piece is not empty (not "--"), draw the piece on the screen
+            if piece != "--":
+                screen.blit(IMAGES[piece], p.Rect(c*SQUARE_SIZE, r*SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)) # Draw the piece on the same square
 
 if __name__ == "__main__":
     main()  # Run the main function to start the game
