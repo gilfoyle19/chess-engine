@@ -60,7 +60,15 @@ def main():
                     square_selected = (row, col)  # Update the square selected by the player
                     player_clicks.append(square_selected)  # Add the selected square to the player clicks
                 if len(player_clicks) == 2:  # If the player has made two clicks
-                    pass
+                    move = engine.Move(player_clicks[0], player_clicks[1], state.board)  # Create a Move object with the selected squares and the current board state
+                    print(move.get_chess_notation())  # Print the move in chess notation - for debugging
+                    state.make_move(move)  # Update the game state with the new move
+                    square_selected = ()  # Reset the square selected
+                    player_clicks = []  # Reset the player clicks   
+                    print(state.move_log)  # Print the move log - for debugging
+                    print(state.board)  # Print the current board state - for debugging
+       
+       
         DrawGame(screen, state) # call the DrawGame function to draw the current game state on the screen
         clock.tick(MAX_FPS)  # Control the frame rate of the game
         p.display.flip() # Update the display
