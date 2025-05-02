@@ -3,8 +3,9 @@
 """
 Todo: 
 1. Add a functionality in the LoadImages function to change the themes. 
-2. Add in piece highlighting functionality in DrawGame function.
+2. Add in piece highlighting functionality in DrawGame function - Completed.
 3. Move suggestions in the DrawGame function.
+4. Make a version without mouse clicks - only keyboard input
 
 """
 
@@ -39,10 +40,14 @@ def main():
     clock = p.time.Clock()  #to control the frame rate
     screen.fill(p.Color("white")) 
     state = engine.GameState()  # Create a new GameState object to manage the game state
+    valid_moves = state.get_valid_moves()  # Get the valid moves for the current game state
+    move_made = False  # Flag to check if a move has been made
+    
+    
     LoadImages() # Load the images of the chess pieces
     running = True  # Flag to control the main loop
     #Intialize the variables to keep track of the last click of the player and the coordinates of the player's clicks - outside of the while loop as we can reuse them.
-    square_selected = ()  # Tuple to keep track of the last click of the player (row,column)
+    square_selected = ()  # Tuple to keep track of the lastest click of the player (row,column)
     player_clicks = []  # List to store the coordinates of the player's clicks [(row1, column1), (row2, column2)]
     while running:
         for e in p.event.get():
@@ -62,13 +67,22 @@ def main():
                 if len(player_clicks) == 2:  # If the player has made two clicks
                     move = engine.Move(player_clicks[0], player_clicks[1], state.board)  # Create a Move object with the selected squares and the current board state
                     print(move.get_chess_notation())  # Print the move in chess notation - for debugging
-                    state.make_move(move)  # Update the game state with the new move
+                    if move in valid_moves:  # Check if the move is valid
+                        state.make_move(move)  # Update the game state with the new move
+                        move_made = True  # Set the flag to true if a valid move is made
                     square_selected = ()  # Reset the square selected
                     player_clicks = []  # Reset the player clicks   
-                    print(state.move_log)  # Print the move log - for debugging
-                    print(state.board)  # Print the current board state - for debugging
+            elif e.type == p.KEYDOWN:  # Check if a key is pressed
+                if e.key == p.K_z:  # If the 'Z' key is pressed
+                    state.undo_move()  # Undo the last move in the game state
+                    move_made = True  # Set the flag to true to update the game state
        
        
+        if move_made:
+            valid_moves = state.get_valid_moves()  # Get the valid moves for the current game state
+            move_made = False  # Reset the flag after processing the move
+        
+        
         DrawGame(screen, state) # call the DrawGame function to draw the current game state on the screen
         clock.tick(MAX_FPS)  # Control the frame rate of the game
         p.display.flip() # Update the display
