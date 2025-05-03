@@ -51,36 +51,38 @@ def main():
     player_clicks = []  # List to store the coordinates of the player's clicks [(row1, column1), (row2, column2)]
     while running:
         for e in p.event.get():
-            if e.type == p.QUIT:  # Check if the user has closed the window
+            if e.type == p.QUIT:
                 running = False
                 print("Game Over")
             elif e.type == p.MOUSEBUTTONDOWN:
-                location = p.mouse.get_pos() #x,y coordinates of the mouse click
-                col = location[0] // SQUARE_SIZE  # Calculate the column based on the mouse click position [0] is the x coordinate
-                row = location[1] // SQUARE_SIZE  # Calculate the row based on the mouse click position [1] is the y coordinate
-                if square_selected == (row, col): # If the user clicks on the same square again, deselect it
+                location = p.mouse.get_pos()  # x, y coordinates of the mouse click
+                col = location[0] // SQUARE_SIZE
+                row = location[1] // SQUARE_SIZE
+                if square_selected == (row, col):  # Deselect if the same square is clicked
                     square_selected = ()
-                    player_clicks = []  # Reset the player clicks   
+                    player_clicks = []
                 else:
-                    square_selected = (row, col)  # Update the square selected by the player
-                    player_clicks.append(square_selected)  # Add the selected square to the player clicks
-                if len(player_clicks) == 2:  # If the player has made two clicks
-                    move = engine.Move(player_clicks[0], player_clicks[1], state.board)  # Create a Move object with the selected squares and the current board state
-                    print(move.get_chess_notation())  # Print the move in chess notation - for debugging
+                    square_selected = (row, col)
+                    player_clicks.append(square_selected)  # Append the selected square
+                if len(player_clicks) == 2:  # After two clicks, attempt a move
+                    move = engine.Move(player_clicks[0], player_clicks[1], state.board)
+                    print(move.get_chess_notation())
                     if move in valid_moves:  # Check if the move is valid
-                        state.make_move(move)  # Update the game state with the new move
-                        move_made = True  # Set the flag to true if a valid move is made
-                    square_selected = ()  # Reset the square selected
-                    player_clicks = []  # Reset the player clicks   
-            elif e.type == p.KEYDOWN:  # Check if a key is pressed
-                if e.key == p.K_z:  # If the 'Z' key is pressed
-                    state.undo_move()  # Undo the last move in the game state
-                    move_made = True  # Set the flag to true to update the game state
-       
-       
+                        state.make_move(move)
+                        move_made = True
+                        square_selected = ()  # Reset selection
+                        player_clicks = []
+                    else:
+                        player_clicks = [square_selected]  # Keep the last selected square
+            elif e.type == p.KEYDOWN:
+                if e.key == p.K_z:  # Undo move
+                    state.undo_move()
+                    move_made = True
+
         if move_made:
-            valid_moves = state.get_valid_moves()  # Get the valid moves for the current game state
-            move_made = False  # Reset the flag after processing the move
+            valid_moves = state.get_valid_moves()  # Recalculate valid moves
+            print("Updated valid moves:", [move.get_chess_notation() for move in valid_moves])  # Debugging
+            move_made = False
         
         
         DrawGame(screen, state) # call the DrawGame function to draw the current game state on the screen
