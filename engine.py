@@ -95,20 +95,71 @@ class GameState():
 
     
     def get_rook_moves(self, r, c, moves):
-        pass
+        directions = ((-1,0), (0,-1), (1,0), (0,1))  # Up, Left, Down, Right movements
+        enemy_color = 'b' if self.white_to_move else 'w'  # Determine the enemy color
+        for d in directions:
+            for i in range(1, 8):
+                end_row = r + d[0] * i  # Calculate the new row position
+                end_col = c + d[1] * i  # Calculate the new column position
+                if 0 <= end_row < len(self.board) and 0 <= end_col < len(self.board[end_row]):  # Check if the position is within the board
+                    end_piece = self.board[end_row][end_col]  # Get the piece at the new position
+                    if end_piece == '--':  # If the square is empty, add the move
+                        moves.append(Move((r, c), (end_row, end_col), self.board))
+                    elif end_piece[0] == enemy_color:  # If the square has an enemy piece, add the move and break
+                        moves.append(Move((r, c), (end_row, end_col), self.board))
+                        break
+                    else:  # If the square has a friendly piece, break
+                        break
+                else:  # If the position is out of bounds, break
+                    break
 
     def get_knight_moves(self, r, c, moves):
-        pass
+        knight_moves = ((-2,-1), (-1,-2), (1,-2), (2,-1), (2,1), (1,2), (-1,2), (-2,1))
+        enemy_color = 'b' if self.white_to_move else 'w'  # Determine the enemy color
+        for m in knight_moves:
+            end_row = r + m[0]
+            end_col = c + m[1]  # Calculate the new column position
+            if 0 <= end_row < len(self.board) and 0 <= end_col < len(self.board[end_row]):  # Check if the position is within the board
+                end_piece = self.board[end_row][end_col]  # Get the piece at the new position
+                if end_piece == enemy_color:
+                    moves.append(Move((r, c), (end_row, end_col), self.board))
+                elif end_piece == '--':  # If the square is empty, add the move 
+                    moves.append(Move((r, c), (end_row, end_col), self.board))
+            
 
     def get_bishop_moves(self, r, c, moves):
-        pass
+        directions = ((-1,-1), (-1,1), (1,-1), (1,1))  # Up-Left, Up-Right, Down-Left, Down-Right movements
+        enemy_color = 'b' if self.white_to_move else 'w'  # Determine the enemy color
+        for d in directions:
+            for i in range(1, 8):
+                end_row = r + d[0] * i
+                end_col = c + d[1] * i  # Calculate the new column position
+                if 0 <= end_row < len(self.board) and 0 <= end_col < len(self.board[end_row]):  # Check if the position is within the board
+                    end_piece = self.board[end_row][end_col]  # Get the piece at the new position
+                    if end_piece == '--':  # If the square is empty, add the move
+                        moves.append(Move((r, c), (end_row, end_col), self.board))
+                    elif end_piece[0] == enemy_color:  # If the square has an enemy piece, add the move and break
+                        moves.append(Move((r, c), (end_row, end_col), self.board))
+                        break
+                    else:
+                        break
+                else:  # If the position is out of bounds, break
+                    break
 
     def get_queen_moves(self, r, c, moves):
-        pass
-    
+        self.get_rook_moves(r, c, moves)
+        self.get_bishop_moves(r, c, moves)  # Combine rook and bishop moves for queen
+
     def get_king_moves(self, r, c, moves):
-        pass
-    
+        king_moves = ((-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1))
+        ally_color = 'w' if self.white_to_move else 'b'  # Determine the ally color
+        for move in king_moves:
+            end_row = r + move[0]  # Calculate the new row position
+            end_col = c + move[1]  # Calculate the new column position
+            if 0 <= end_row < len(self.board) and 0 <= end_col < len(self.board[end_row]):  # Check if the position is within the board
+                end_piece = self.board[end_row][end_col]  # Get the piece at the new position
+                if end_piece == '--' or end_piece[0] != ally_color:  # Empty square or enemy piece
+                    moves.append(Move((r, c), (end_row, end_col), self.board))
             
 
 class Move(): # This class is responsible for storing the information of a move made in the game.
