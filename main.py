@@ -81,7 +81,7 @@ def main():
 
         if move_made:
             valid_moves = state.get_valid_moves()  # Recalculate valid moves
-            print("Updated valid moves:", [move.get_chess_notation() for move in valid_moves])  # Debugging
+            #print("Updated valid moves:", [move.get_chess_notation() for move in valid_moves])
             move_made = False
         
         

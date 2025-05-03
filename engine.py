@@ -20,13 +20,20 @@ class GameState():
 # The board is represented as a list of lists, where each inner list represents a row on the chessboard.
         self.white_to_move = True  # True if it's white's turn, False
         self.move_log = []  # List to keep track of moves made in the game
-
+        self.white_king_location = (7, 4)  # Initial position of the white king
+        self.black_king_location = (0, 4)  # Initial position of the black king
+        self.check_mate = False  # Flag to indicate if the game is in checkmate
+        self.stale_mate = False  # Flag to indicate if the game is in stalemate
     # The make_move method updates the board with the new move. - not works for casting, pawn promotion and en passant yet.
     def make_move(self, move):
         self.board[move.start_row][move.start_col] = '--'
         self.board[move.end_row][move.end_col] = move.piece_moved
         self.move_log.append(move)
         self.white_to_move = not self.white_to_move
+        if move.piece_moved == 'wK':  # Update the king's location if a king is moved
+            self.white_king_location = (move.end_row, move.end_col)
+        elif move.piece_moved == 'bK':
+            self.black_king_location = (move.end_row, move.end_col)
         print(f"Board after move: {self.board}")  # Debugging
     
     def undo_move(self):
@@ -35,13 +42,63 @@ class GameState():
             self.board[move.start_row][move.start_col] = move.piece_moved #reverse the move by putting the piece back to its original position
             self.board[move.end_row][move.end_col] = move.piece_captured #reverse the piece captured by putting the piece back to its original position
             self.white_to_move = not self.white_to_move  # Switch turns back to the previous player
+            if move.piece_moved == 'wK':  # Update the king's location if a king is moved
+                self.white_king_location = (move.start_row, move.start_col)
+            elif move.piece_moved == 'bK':
+                self.black_king_location = (move.start_row, move.start_col)
+    
     """
     Moves considering king is in check
     """
     def get_valid_moves(self):
-        moves = self.get_all_possible_moves()
-        print("Valid moves:", [move.get_chess_notation() for move in moves])  # Debugging
-        return moves
+        """
+        1. Generate all possible moves for the current player.
+        2. For each move, make the move
+        3. Generate all the possible moves for the opponent.
+        4. for each move, check if the king is in check.
+        5. If the king is in check, remove the move from the list of valid moves.
+        6. Return the list of valid moves.
+        """
+        moves = self.get_all_possible_moves()  # Get all possible moves for the current player
+        for i in range(len(moves)-1, -1, -1):
+            self.make_move(moves[i])
+            self.white_to_move = not self.white_to_move  # Switch to the opponent's turn
+            if self.in_check():  # Check if the king is in check after making the move
+                moves.remove(moves[i])  # Remove the move if it puts the king in check  
+            self.white_to_move = not self.white_to_move  # Switch back to the original player's turn
+            self.undo_move()  # Undo the move to restore the original state
+        if len(moves) == 0: #either checkmate or stalemate
+            if self.in_check():
+                self.check_mate = True
+            else:
+                self.stale_mate = True
+        else:
+            self.check_mate = False
+            self.stale_mate = False
+        return moves  # Return the list of valid moves
+        
+    """
+    Determine if the current player's king is in check.
+    """
+    def in_check(self):
+        if self.white_to_move:
+            return self.square_under_attack(self.white_king_location[0], self.white_king_location[1])
+        else:
+            return self.square_under_attack(self.black_king_location[0], self.black_king_location[1])
+
+    """
+    Determine if the enemy can attack the square (r, c).
+    """
+
+    def square_under_attack(self, r, c):
+        self.white_to_move = not self.white_to_move # Switch to the opponent's turn
+        opponent_moves = self.get_all_possible_moves()  # Get all possible moves for the opponent
+        self.white_to_move = not self.white_to_move # Switch back to the original player's turn
+        for move in opponent_moves:
+            if move.end_row == r and move.end_col == c: #square under attack if the opponent can move to that square
+                self.white_to_move = not self.white_to_move # Switch back to the original player's turn
+                return True  # The square is under attack
+        return False  # The square is not under attack
 
     """
     Moves without considering king is in check
@@ -53,10 +110,7 @@ class GameState():
                 turn = self.board[r][c][0]
                 if (turn == 'w' and self.white_to_move) or (turn == 'b' and not self.white_to_move):
                     piece = self.board[r][c][1]
-                    print(f"Checking piece {piece} at {r}, {c}")  # Debugging
                     self.move_functions[piece](r, c, moves)  # Call the appropriate move function for the piece
-
-        print(f"Generated moves: {[move.get_chess_notation() for move in moves]}")  # Debugging
         return moves
 
     """ 
