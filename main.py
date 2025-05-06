@@ -26,7 +26,7 @@ Load images of chess pieces into the IMAGES dictionary. This function is called 
 def LoadImages():
     pieces = ['wP', 'wN', 'wB', 'wR', 'wQ', 'wK', 'bP', 'bN', 'bB', 'bR', 'bQ', 'bK']
     for piece in pieces:
-        IMAGES[piece] = p.transform.scale(p.image.load("C:/Users/Chivukula/100daysofcode/Chess/chess_engine/images/" + piece + ".png"), (SQUARE_SIZE, SQUARE_SIZE))  # Load and scale the image to fit the square size
+        IMAGES[piece] = p.transform.scale(p.image.load("images/" + piece + ".png"), (SQUARE_SIZE, SQUARE_SIZE))  # Load and scale the image to fit the square size
     # Load the images for the chess pieces and store them in the IMAGES dictionary.
 
 
@@ -42,7 +42,7 @@ def main():
     state = engine.GameState()  # Create a new GameState object to manage the game state
     valid_moves = state.get_valid_moves()  # Get the valid moves for the current game state
     move_made = False  # Flag to check if a move has been made
-    
+    game_over = False  # Flag to check if the game is over
     
     LoadImages() # Load the images of the chess pieces
     running = True  # Flag to control the main loop
@@ -54,7 +54,7 @@ def main():
             if e.type == p.QUIT:
                 running = False
                 print("Game Over")
-            elif e.type == p.MOUSEBUTTONDOWN:
+            elif e.type == p.MOUSEBUTTONDOWN and not game_over:
                 location = p.mouse.get_pos()  # x, y coordinates of the mouse click
                 col = location[0] // SQUARE_SIZE
                 row = location[1] // SQUARE_SIZE
@@ -72,22 +72,83 @@ def main():
                         move_made = True
                         square_selected = ()  # Reset selection
                         player_clicks = []
+                        # Handle pawn promotion
+                        if move.is_pawn_promotion:
+                            promotion_piece = handle_pawn_promotion(screen)
+                            if promotion_piece:
+                                state.promotion_choice = promotion_piece
+                                state.board[move.end_row][move.end_col] = move.piece_moved[0] + promotion_piece
                     else:
                         player_clicks = [square_selected]  # Keep the last selected square
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z:  # Undo move
                     state.undo_move()
                     move_made = True
+                    game_over = False
+                elif e.key == p.K_r:  # Reset the game
+                    state = engine.GameState()
+                    valid_moves = state.get_valid_moves()
+                    square_selected = ()
+                    player_clicks = []
+                    move_made = False
+                    game_over = False
 
         if move_made:
             valid_moves = state.get_valid_moves()  # Recalculate valid moves
-            #print("Updated valid moves:", [move.get_chess_notation() for move in valid_moves])
             move_made = False
         
+        if state.check_mate:
+            game_over = True
+            if state.white_to_move:
+                draw_text(screen, "Black wins by checkmate")
+            else:
+                draw_text(screen, "White wins by checkmate")
+        elif state.stale_mate:
+            game_over = True
+            draw_text(screen, "Stalemate")
         
         DrawGame(screen, state) # call the DrawGame function to draw the current game state on the screen
         clock.tick(MAX_FPS)  # Control the frame rate of the game
         p.display.flip() # Update the display
+
+def handle_pawn_promotion(screen):
+    # Draw promotion menu
+    menu_rect = p.Rect(WIDTH//4, HEIGHT//4, WIDTH//2, HEIGHT//2)
+    p.draw.rect(screen, p.Color("white"), menu_rect)
+    p.draw.rect(screen, p.Color("black"), menu_rect, 2)
+    
+    # Draw piece options
+    pieces = ['Q', 'R', 'B', 'N']
+    piece_size = SQUARE_SIZE
+    for i, piece in enumerate(pieces):
+        piece_rect = p.Rect(menu_rect.left + (menu_rect.width - piece_size) // 2,
+                          menu_rect.top + (menu_rect.height - piece_size) // 2 + i * piece_size,
+                          piece_size, piece_size)
+        screen.blit(IMAGES['w' + piece], piece_rect)
+    
+    p.display.flip()
+    
+    # Wait for user selection
+    while True:
+        for e in p.event.get():
+            if e.type == p.MOUSEBUTTONDOWN:
+                mouse_pos = p.mouse.get_pos()
+                for i, piece in enumerate(pieces):
+                    piece_rect = p.Rect(menu_rect.left + (menu_rect.width - piece_size) // 2,
+                                      menu_rect.top + (menu_rect.height - piece_size) // 2 + i * piece_size,
+                                      piece_size, piece_size)
+                    if piece_rect.collidepoint(mouse_pos):
+                        return piece
+            elif e.type == p.QUIT:
+                return None
+
+def draw_text(screen, text):
+    font = p.font.SysFont("Helvetica", 32, True, False)
+    text_object = font.render(text, 0, p.Color('Gray'))
+    text_location = p.Rect(0, 0, WIDTH, HEIGHT).move(WIDTH/2 - text_object.get_width()/2, HEIGHT/2 - text_object.get_height()/2)
+    screen.blit(text_object, text_location)
+    text_object = font.render(text, 0, p.Color('Black'))
+    screen.blit(text_object, text_location.move(2, 2))
 
 """
 Responsible for all the graphics within the current game state 
